@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Environment/secrets
+.env
+.env.*
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Tooling/cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Local output
+output/
+logs/
