@@ -1,0 +1,27 @@
+[project]
+name = "gmail-onedrive-filer"
+version = "0.1.0"
+description = "File Gmail emails into date-based folders in a OneDrive-synced directory"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "google-api-python-client>=2.165.0",
+  "google-auth>=2.38.0",
+  "google-auth-oauthlib>=1.2.1",
+]
+
+[project.scripts]
+gmail-onedrive-filer = "gmail_onedrive_filer.cli:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
