@@ -393,7 +393,7 @@ class GmailClient:
 
         body: dict[str, list[str]] = {
             "addLabelIds": [filed_id, year_id],
-            "removeLabelIds": [],
+            "removeLabelIds": ["INBOX"],
         }
         if tofile_id:
             body["removeLabelIds"].append(tofile_id)
@@ -413,7 +413,7 @@ class GmailClient:
             .modify(
                 userId="me",
                 id=message_id,
-                body={"addLabelIds": [tofile_id], "removeLabelIds": []},
+                body={"addLabelIds": [tofile_id], "removeLabelIds": ["INBOX"]},
             )
             .execute()
         )
