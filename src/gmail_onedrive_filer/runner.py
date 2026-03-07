@@ -6,13 +6,16 @@ from datetime import datetime
 
 from .config import AppConfig
 from .filer import build_message_paths, sanitize_component
-from .gmail_client import GmailClient
+from .gmail_client import AttachedEmail, GmailClient
 from .state import AppState
 
 DEFAULT_TRIAGE_QUERY = (
     "newer_than:2d -label:stluke-filed -label:stluke-tofile "
-    "subject:(invoice OR \"tax invoice\" OR \"invoice available\" OR \"payment receipt\" OR remittance OR payout) "
-    "-subject:(\"single-use code\" OR verify OR security OR \"shared the folder\" OR newsletter)"
+    "((subject:(invoice OR invoices OR order OR orders OR subscription OR \"tax invoice\" OR \"invoice available\" OR \"payment receipt\" OR remittance OR payout) "
+    "-subject:(\"single-use code\" OR verify OR security OR \"shared the folder\" OR newsletter)) "
+    "OR from:(stripe.com) "
+    "OR from:(gocardless) "
+    "OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment))"
 )
 
 
@@ -26,7 +29,15 @@ class RunSummary:
     planned_paths: list[str]
 
 
-def _write_outputs(paths, eml_data: bytes, body_text: str, attachments: list[tuple[str, bytes]], metadata: dict, dry_run: bool) -> None:
+def _write_outputs(
+    paths,
+    eml_data: bytes,
+    body_text: str,
+    attachments: list[tuple[str, bytes]],
+    attached_emails: list[AttachedEmail],
+    metadata: dict,
+    dry_run: bool,
+) -> None:
     if dry_run:
         return
     paths.base_dir.mkdir(parents=True, exist_ok=True)
@@ -37,6 +48,37 @@ def _write_outputs(paths, eml_data: bytes, body_text: str, attachments: list[tup
     for name, data in attachments:
         safe_name = sanitize_component(name, fallback="attachment")
         (paths.attachments_dir / safe_name).write_bytes(data)
+
+    used_names: set[str] = set()
+    for attached in attached_emails:
+        base_name = sanitize_component(attached.name, fallback="attached-email")
+        folder_name = base_name
+        suffix = 2
+        while folder_name in used_names:
+            folder_name = f"{base_name}-{suffix}"
+            suffix += 1
+        used_names.add(folder_name)
+
+        attached_dir = paths.attachments_dir / folder_name
+        attached_attachments_dir = attached_dir / "attachments"
+        attached_dir.mkdir(parents=True, exist_ok=True)
+        attached_attachments_dir.mkdir(parents=True, exist_ok=True)
+        (attached_dir / "original.eml").write_bytes(attached.raw_eml)
+        (attached_dir / "body.txt").write_text(attached.body_text, encoding="utf-8")
+        (attached_dir / "metadata.json").write_text(
+            json.dumps(
+                {
+                    "subject": attached.subject,
+                    "source": "top-level-attached-email",
+                    "parent_message_id": metadata.get("id"),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        for name, data in attached.attachments:
+            safe_name = sanitize_component(name, fallback="attachment")
+            (attached_attachments_dir / safe_name).write_bytes(data)
 
 
 def run_sync(config: AppConfig, query: str | None, max_results: int | None, dry_run: bool) -> RunSummary:
@@ -64,7 +106,7 @@ def run_sync(config: AppConfig, query: str | None, max_results: int | None, dry_
             continue
 
         eml = client.fetch_raw_eml(msg.id)
-        body, attachments = client.fetch_text_and_attachments(msg.id)
+        body, attachments, attached_emails = client.fetch_text_and_attachments(msg.id)
         metadata = {
             "id": msg.id,
             "subject": msg.subject,
@@ -72,7 +114,15 @@ def run_sync(config: AppConfig, query: str | None, max_results: int | None, dry_
             "query": effective_query,
             "mode": "sync",
         }
-        _write_outputs(paths, eml, body, attachments, metadata, dry_run=dry_run)
+        _write_outputs(
+            paths,
+            eml,
+            body,
+            attachments,
+            attached_emails,
+            metadata,
+            dry_run=dry_run,
+        )
         client.mark_as_filed(msg.id, msg.internal_received_at.year)
         state.processed_ids.add(msg.id)
         filed += 1

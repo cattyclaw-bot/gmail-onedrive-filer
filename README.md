@@ -8,13 +8,17 @@ inside a local OneDrive-synced directory.
 - Defaults to query: `label:stluke-tofile`
 - Supports triage mode to find likely invoice emails from last 2 days and add `stluke-tofile`
   - Default triage query:
-    - `newer_than:2d -label:stluke-filed -label:stluke-tofile subject:(invoice OR "tax invoice" OR "invoice available" OR "payment receipt" OR remittance OR payout) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)`
+    - `newer_than:2d -label:stluke-filed -label:stluke-tofile ((subject:(invoice OR invoices OR order OR orders OR subscription OR "tax invoice" OR "invoice available" OR "payment receipt" OR remittance OR payout) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)) OR from:(stripe.com) OR from:(gocardless) OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment))`
 - Files by internal received date: `YYYY/MM/DD`
 - Stores each message in its own folder with:
   - `original.eml`
   - `body.txt`
   - `attachments/`
   - `metadata.json`
+- Top-level attached emails (`.eml` / `message/rfc822`) are expanded one level:
+  - each becomes a folder under parent `attachments/`
+  - with its own `original.eml`, `body.txt`, `attachments/`, `metadata.json`
+  - nested attached emails inside those are kept as files (not recursively expanded)
 - After successful filing:
   - removes label `stluke-tofile` (if present)
   - adds label `stluke-filed`

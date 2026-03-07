@@ -6,6 +6,9 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
+from email import policy
+from email.parser import BytesParser
+from email.utils import collapse_rfc2231_value
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
@@ -27,6 +30,15 @@ class GmailMessage:
     id: str
     subject: str
     internal_received_at: datetime
+
+
+@dataclass(frozen=True)
+class AttachedEmail:
+    name: str
+    subject: str
+    raw_eml: bytes
+    body_text: str
+    attachments: list[tuple[str, bytes]]
 
 
 class GmailClient:
@@ -65,6 +77,81 @@ class GmailClient:
             return f"attachment-{fallback_index}"
         safe = sanitize_component(name, fallback=f"attachment-{fallback_index}")
         return safe
+
+    @staticmethod
+    def _message_payload_bytes(part) -> bytes:
+        payload = part.get_payload()
+        if isinstance(payload, list) and payload:
+            first = payload[0]
+            if hasattr(first, "as_bytes"):
+                return first.as_bytes(policy=policy.default)
+        decoded = part.get_payload(decode=True)
+        if decoded:
+            return decoded
+        return b""
+
+    @classmethod
+    def _parse_attached_email(cls, raw_eml: bytes, fallback_name: str) -> AttachedEmail:
+        msg = BytesParser(policy=policy.default).parsebytes(raw_eml)
+        subject = str(msg.get("Subject") or fallback_name or "(no subject)")
+
+        plain_chunks: list[str] = []
+        html_chunks: list[str] = []
+        attachments: list[tuple[str, bytes]] = []
+        seen_names: set[str] = set()
+        idx_counter = [0]
+
+        def next_unique_name(raw_name: str) -> str:
+            idx_counter[0] += 1
+            base = cls._safe_attachment_name(raw_name, idx_counter[0])
+            name = base
+            suffix = 2
+            while name in seen_names:
+                name = f"{base}-{suffix}"
+                suffix += 1
+            seen_names.add(name)
+            return name
+
+        def walk_email_part(part) -> None:
+            if part.is_multipart():
+                for child in part.iter_parts():
+                    walk_email_part(child)
+                return
+
+            mime_type = part.get_content_type()
+            filename = part.get_filename()
+            if filename and isinstance(filename, tuple):
+                filename = collapse_rfc2231_value(filename)
+
+            if filename:
+                data = (
+                    cls._message_payload_bytes(part)
+                    if mime_type == "message/rfc822"
+                    else (part.get_payload(decode=True) or b"")
+                )
+                attachments.append((next_unique_name(str(filename)), data))
+                return
+
+            if mime_type == "text/plain":
+                plain_chunks.append(str(part.get_content()).strip())
+            elif mime_type == "text/html":
+                html_chunks.append(str(part.get_content()).strip())
+
+        walk_email_part(msg)
+        if plain_chunks:
+            body_text = "\n\n".join(chunk for chunk in plain_chunks if chunk).strip()
+        elif html_chunks:
+            body_text = cls._html_to_text("\n\n".join(chunk for chunk in html_chunks if chunk))
+        else:
+            body_text = ""
+
+        return AttachedEmail(
+            name=fallback_name or subject,
+            subject=subject,
+            raw_eml=raw_eml,
+            body_text=body_text,
+            attachments=attachments,
+        )
 
     def _build_service(self):
         try:
@@ -226,7 +313,7 @@ class GmailClient:
         )
         return self._decode_b64url(msg.get("raw"))
 
-    def fetch_text_and_attachments(self, message_id: str) -> tuple[str, list[tuple[str, bytes]]]:
+    def fetch_text_and_attachments(self, message_id: str) -> tuple[str, list[tuple[str, bytes]], list[AttachedEmail]]:
         msg = (
             self._service.users()
             .messages()
@@ -238,6 +325,7 @@ class GmailClient:
         plain_chunks: list[str] = []
         html_chunks: list[str] = []
         attachments: list[tuple[str, bytes]] = []
+        attached_emails: list[AttachedEmail] = []
         seen_names: set[str] = set()
 
         def walk_part(part: dict, idx_counter: list[int]) -> None:
@@ -269,7 +357,11 @@ class GmailClient:
                     .get(userId="me", messageId=message_id, id=attachment_id)
                     .execute()
                 )
-                attachments.append((name, self._decode_b64url(raw.get("data"))))
+                raw_data = self._decode_b64url(raw.get("data"))
+                if mime_type == "message/rfc822":
+                    attached_emails.append(self._parse_attached_email(raw_data, name))
+                else:
+                    attachments.append((name, raw_data))
                 return
 
             if not data:
@@ -292,7 +384,7 @@ class GmailClient:
         else:
             body_text = ""
 
-        return body_text, attachments
+        return body_text, attachments, attached_emails
 
     def mark_as_filed(self, message_id: str, year: int) -> None:
         tofile_id = self._find_label_id(TOFILE_LABEL)
