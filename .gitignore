@@ -9,6 +9,8 @@ venv/
 # Environment/secrets
 .env
 .env.*
+secrets/
+state/
 
 # OS/editor
 .DS_Store
@@ -21,6 +23,7 @@ Thumbs.db
 .mypy_cache/
 .ruff_cache/
 .cache/
+*.egg-info/
 
 # Local output
 output/

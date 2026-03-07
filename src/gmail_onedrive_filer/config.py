@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-DEFAULT_QUERY = "-in:spam -in:trash"
+DEFAULT_QUERY = "label:stluke-tofile"
 
 
 @dataclass(frozen=True)

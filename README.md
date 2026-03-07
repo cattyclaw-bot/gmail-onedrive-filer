@@ -5,13 +5,17 @@ inside a local OneDrive-synced directory.
 
 ## Behavior
 - Reads Gmail using the Gmail API (OAuth)
-- Defaults to query: `-in:spam -in:trash`
+- Defaults to query: `label:stluke-tofile`
 - Files by internal received date: `YYYY/MM/DD`
 - Stores each message in its own folder with:
   - `original.eml`
   - `body.txt`
   - `attachments/`
   - `metadata.json`
+- After successful filing:
+  - removes label `stluke-tofile` (if present)
+  - adds label `stluke-filed`
+  - adds year label from received date (for example `2026`)
 
 ## Setup
 1. Create a Google Cloud OAuth Desktop app and download `credentials.json`.

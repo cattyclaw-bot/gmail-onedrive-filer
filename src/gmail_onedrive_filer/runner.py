@@ -67,6 +67,7 @@ def run_sync(config: AppConfig, query: str | None, max_results: int | None, dry_
             "mode": "sync",
         }
         _write_outputs(paths, eml, body, attachments, metadata, dry_run=dry_run)
+        client.mark_as_filed(msg.id, msg.internal_received_at.year)
         state.processed_ids.add(msg.id)
         filed += 1
 
