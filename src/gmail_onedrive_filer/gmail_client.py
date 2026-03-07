@@ -312,3 +312,16 @@ class GmailClient:
             .modify(userId="me", id=message_id, body=body)
             .execute()
         )
+
+    def mark_for_filing(self, message_id: str) -> None:
+        tofile_id = self._get_or_create_label_id(TOFILE_LABEL)
+        (
+            self._service.users()
+            .messages()
+            .modify(
+                userId="me",
+                id=message_id,
+                body={"addLabelIds": [tofile_id], "removeLabelIds": []},
+            )
+            .execute()
+        )

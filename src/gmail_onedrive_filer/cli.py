@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from .config import AppConfig
-from .runner import run_backfill, run_plan, run_sync
+from .runner import run_backfill, run_plan, run_sync, run_triage
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,6 +24,10 @@ def build_parser() -> argparse.ArgumentParser:
     plan = sub.add_parser("plan", help="List planned output paths without writing files")
     plan.add_argument("--query", help="Gmail query override")
     plan.add_argument("--max", type=int, dest="max_results", help="Max messages to inspect")
+
+    triage = sub.add_parser("triage", help="Tag likely invoice emails from last 2 days with stluke-tofile")
+    triage.add_argument("--query", help="Gmail query override")
+    triage.add_argument("--max", type=int, dest="max_results", help="Max messages to inspect")
 
     backfill = sub.add_parser("backfill", help="Historical backfill")
     backfill.add_argument("--query", help="Gmail query override")
@@ -55,6 +59,13 @@ def main() -> int:
             config=config,
             query=args.query,
             max_results=args.max_results,
+        )
+    elif args.command == "triage":
+        summary = run_triage(
+            config=config,
+            query=args.query,
+            max_results=args.max_results,
+            dry_run=args.dry_run,
         )
     else:
         summary = run_backfill(

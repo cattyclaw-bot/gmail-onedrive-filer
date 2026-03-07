@@ -6,6 +6,9 @@ inside a local OneDrive-synced directory.
 ## Behavior
 - Reads Gmail using the Gmail API (OAuth)
 - Defaults to query: `label:stluke-tofile`
+- Supports triage mode to find likely invoice emails from last 2 days and add `stluke-tofile`
+  - Default triage query:
+    - `newer_than:2d -label:stluke-filed -label:stluke-tofile subject:(invoice OR "tax invoice" OR "invoice available" OR "payment receipt" OR remittance OR payout) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)`
 - Files by internal received date: `YYYY/MM/DD`
 - Stores each message in its own folder with:
   - `original.eml`
@@ -49,4 +52,10 @@ Plan output paths only (no message body/attachment fetch, no writes):
 
 ```bash
 gmail-onedrive-filer --root "/path/to/OneDrive/EmailArchive" plan --max 50
+```
+
+Triage likely invoice/bill emails from last 2 days and add `stluke-tofile`:
+
+```bash
+gmail-onedrive-filer --root "/path/to/OneDrive/EmailArchive" triage --max 100
 ```

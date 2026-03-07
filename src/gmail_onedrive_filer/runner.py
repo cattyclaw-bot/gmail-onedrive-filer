@@ -9,6 +9,12 @@ from .filer import build_message_paths, sanitize_component
 from .gmail_client import GmailClient
 from .state import AppState
 
+DEFAULT_TRIAGE_QUERY = (
+    "newer_than:2d -label:stluke-filed -label:stluke-tofile "
+    "subject:(invoice OR \"tax invoice\" OR \"invoice available\" OR \"payment receipt\" OR remittance OR payout) "
+    "-subject:(\"single-use code\" OR verify OR security OR \"shared the folder\" OR newsletter)"
+)
+
 
 @dataclass(frozen=True)
 class RunSummary:
@@ -119,6 +125,36 @@ def run_plan(config: AppConfig, query: str | None, max_results: int | None) -> R
         query=effective_query,
         fetched=len(messages),
         filed=0,
+        skipped=0,
+        planned_paths=planned_paths,
+    )
+
+
+def run_triage(config: AppConfig, query: str | None, max_results: int | None, dry_run: bool) -> RunSummary:
+    client = GmailClient(
+        str(config.credentials_file),
+        str(config.token_file),
+        timezone=config.timezone,
+    )
+    effective_query = query or DEFAULT_TRIAGE_QUERY
+    messages = client.list_messages(effective_query, max_results=max_results)
+
+    tagged = 0
+    planned_paths: list[str] = []
+    for msg in messages:
+        paths = build_message_paths(config.onedrive_root, msg.internal_received_at, msg.subject, msg.id)
+        planned_paths.append(str(paths.base_dir))
+        if dry_run:
+            tagged += 1
+            continue
+        client.mark_for_filing(msg.id)
+        tagged += 1
+
+    return RunSummary(
+        mode="triage",
+        query=effective_query,
+        fetched=len(messages),
+        filed=tagged,
         skipped=0,
         planned_paths=planned_paths,
     )

@@ -13,3 +13,10 @@ def test_cli_parses_plan() -> None:
     args = parser.parse_args(["--root", "/tmp/od", "plan", "--max", "5"])
     assert args.command == "plan"
     assert args.max_results == 5
+
+
+def test_cli_parses_triage() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["--root", "/tmp/od", "triage", "--max", "12"])
+    assert args.command == "triage"
+    assert args.max_results == 12
