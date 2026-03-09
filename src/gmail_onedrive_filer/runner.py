@@ -11,7 +11,7 @@ from .state import AppState
 
 DEFAULT_TRIAGE_QUERY = (
     "newer_than:2d -label:stluke-filed -label:stluke-tofile "
-    "((subject:(invoice OR invoices OR expense OR expenses OR order OR orders OR subscription OR \"tax invoice\" OR \"invoice available\" OR \"payment receipt\" OR remittance OR payout) "
+    "((subject:(invoice OR invoices OR invoicing OR expense OR expenses OR bill OR transfer OR order OR orders OR subscription OR \"tax invoice\" OR \"invoice available\" OR \"payment receipt\" OR remittance OR payout) "
     "-subject:(\"single-use code\" OR verify OR security OR \"shared the folder\" OR newsletter)) "
     "OR from:(stripe.com) "
     "OR from:(gocardless) "
@@ -27,6 +27,7 @@ class RunSummary:
     filed: int
     skipped: int
     planned_paths: list[str]
+    dual_label_fixes: int = 0
 
 
 def _write_outputs(
@@ -131,6 +132,12 @@ def run_sync(config: AppConfig, query: str | None, max_results: int | None, dry_
         state.last_sync_epoch_ms = int(datetime.now().timestamp() * 1000)
         state.save(config.state_file)
 
+    # Cleanup: fix emails with both stluke-filed and stluke-tofile labels
+    dual_label_fixes = 0
+    if not dry_run:
+        fixed = client.find_and_fix_dual_labels()
+        dual_label_fixes = len(fixed)
+
     return RunSummary(
         mode="sync",
         query=effective_query,
@@ -138,6 +145,7 @@ def run_sync(config: AppConfig, query: str | None, max_results: int | None, dry_
         filed=filed,
         skipped=skipped,
         planned_paths=planned_paths,
+        dual_label_fixes=dual_label_fixes,
     )
 
 

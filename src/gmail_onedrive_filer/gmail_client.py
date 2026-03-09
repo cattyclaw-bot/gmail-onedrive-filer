@@ -417,3 +417,33 @@ class GmailClient:
             )
             .execute()
         )
+
+    def find_and_fix_dual_labels(self) -> list[str]:
+        """Find emails with both stluke-filed and stluke-tofile labels, fix them."""
+        tofile_id = self._find_label_id(TOFILE_LABEL)
+        filed_id = self._find_label_id(FILED_LABEL)
+        
+        if not tofile_id or not filed_id:
+            return []
+        
+        # Search for emails with both labels
+        query = f"label:{FILED_LABEL} label:{TOFILE_LABEL}"
+        
+        messages: list[GmailMessage] = self.list_messages(query, max_results=50)
+        
+        fixed = []
+        for msg in messages:
+            # Remove tofile label, keep filed
+            (
+                self._service.users()
+                .messages()
+                .modify(
+                    userId="me",
+                    id=msg.id,
+                    body={"removeLabelIds": [tofile_id]},
+                )
+                .execute()
+            )
+            fixed.append(msg.id)
+        
+        return fixed
