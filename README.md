@@ -6,6 +6,11 @@ inside a local OneDrive-synced directory.
 
 It will periodically need the Google token refreshed, see refresh section below.
 
+## TODO
+- check if refresh token can be done better, eg auto refresh
+- make google app live, so we don't get warning
+
+
 ## Behavior
 - Reads Gmail using the Gmail API (OAuth)
 - Defaults to query: `label:stluke-tofile`
