@@ -1,7 +1,10 @@
 # gmail-onedrive-filer
 
+Save specific emails from Gmail into OneDrive.
 Email filer that reads Gmail messages and files them into date-based folders
 inside a local OneDrive-synced directory.
+
+It will periodically need the Google token refreshed, see refresh section below.
 
 ## Behavior
 - Reads Gmail using the Gmail API (OAuth)
@@ -27,13 +30,50 @@ inside a local OneDrive-synced directory.
   - removes `INBOX` label (archives from Inbox)
 
 ## Setup
-1. Create a Google Cloud OAuth Desktop app and download `credentials.json`.
-2. Save credentials (example): `./secrets/google-credentials.json`
+1. Create a Google Cloud OAuth Desktop app:
+   - Go to: https://console.cloud.google.com/apis/credentials
+   - Create Project (or use existing)
+   - Click "Create Credentials" → "OAuth client ID"
+   - Application type: "Desktop app"
+   - Download the JSON, rename to `credentials.json`
+2. Save credentials: `./secrets/google-credentials.json`
 3. Install package:
    - `python3 -m pip install -e .`
+4. First run (triggers OAuth browser flow):
+   ```bash
+   gmail-onedrive-filer --root "/path/to/OneDrive/EmailArchive" sync
+   ```
+   This opens a browser to sign in with Google. After auth, token is saved to `./secrets/google-token.json`.
 
-On first run, a browser OAuth flow opens and writes token JSON to
-`./secrets/google-token.json` by default.
+## Google Token Refresh
+This is like the first run above:
+
+cd /home/openclaw/.openclaw/workspace/gmail-onedrive-filer
+rm -f secrets/google-token.json
+. .venv/bin/activate
+gmail-onedrive-filer --root "/home/openclaw/OneDrive/EmailArchive 1" plan --max 1
+
+This will give you a URL to open, do that, select the gmail account that is to be sync'd - eg stlukeselthampark@gmail.com
+
+Select continue with the developer app, enable the permissions requested - read/write emails (its going to be adjusting labels)
+It will then show an error page, "site can't be reached" - this is ok, copy the new url from the browser back into the terminal session we started above.
+If all is good, it will print a bit of JSON, showing the plan
+
+To confirm its ok, rerun the filer line and it should just print the plan again, namely:
+
+gmail-onedrive-filer --root "/home/openclaw/OneDrive/EmailArchive 1" plan --max 1
+
+Example plan response:
+{
+  "mode": "plan",
+  "query": "label:stluke-tofile",
+  "fetched": 0,
+  "filed": 0,
+  "skipped": 0,
+  "planned_paths": [],
+  "dual_label_fixes": 0
+}
+
 
 ## Usage
 Manual sync:
