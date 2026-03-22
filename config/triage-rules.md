@@ -5,12 +5,12 @@ This file is the backup copy of triage rules used by `gmail-onedrive-filer triag
 ## Default Gmail Query
 
 ```text
-newer_than:2d -label:stluke-filed -label:stluke-tofile ((subject:(invoice OR invoices OR invoicing OR expense OR expenses OR bill OR transfer OR order OR orders OR subscription OR "tax invoice" OR "invoice available" OR "payment receipt" OR remittance OR payout) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)) OR from:(stripe.com) OR from:(gocardless) OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment))
+newer_than:2d -label:stluke-filed -label:stluke-tofile ((subject:(invoice OR invoices OR invoicing OR expense OR expenses OR bill OR transfer OR order OR orders OR subscription OR "tax invoice" OR "invoice available" OR "payment receipt" OR remittance OR payout OR renewed OR renewal OR renew) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)) OR from:(stripe.com) OR from:(gocardless) OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment))
 ```
 
 ## Included Criteria
 
-- Subject contains invoice-style terms: `invoice`, `invoices`, `expense`, `expenses`, `order`, `orders`, `subscription`, `tax invoice`, `invoice available`, `payment receipt`, `remittance`, `payout`.
+- Subject contains invoice-style terms: `invoice`, `invoices`, `expense`, `expenses`, `order`, `orders`, `subscription`, `tax invoice`, `invoice available`, `payment receipt`, `remittance`, `payout`, `renewed`, `renewal`, `renew`.
 - Sender domain matches: `stripe.com`.
 - Sender matches: `gocardless`.
 - Sender matches either `lynette.polderman@hotmail.co.uk` or `chriswarrell54@gmail.com` and message has an attachment.

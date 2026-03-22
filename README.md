@@ -16,7 +16,7 @@ It will periodically need the Google token refreshed, see refresh section below.
 - Defaults to query: `label:stluke-tofile`
 - Supports triage mode to find likely invoice emails from last 2 days and add `stluke-tofile`
   - Default triage query:
-    - `newer_than:2d -label:stluke-filed -label:stluke-tofile ((subject:(invoice OR invoices OR expense OR expenses OR order OR orders OR subscription OR "tax invoice" OR "invoice available" OR "payment receipt" OR remittance OR payout) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)) OR from:(stripe.com) OR from:(gocardless) OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment))`
+    - `newer_than:2d -label:stluke-filed -label:stluke-tofile ((subject:(invoice OR invoices OR invoicing OR expense OR expenses OR bill OR transfer OR order OR orders OR subscription OR "tax invoice" OR "invoice available" OR "payment receipt" OR remittance OR payout OR renewed OR renewal OR renew) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)) OR from:(stripe.com) OR from:(gocardless) OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment))`
   - Versioned backup: `config/triage-rules.md`
 - Files by internal received date: `YYYY/MM/DD`
 - Stores each message in its own folder with:
