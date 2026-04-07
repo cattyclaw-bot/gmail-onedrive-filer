@@ -80,6 +80,39 @@ Example plan response:
 }
 
 
+## OneDrive Reauth (abraunegg client)
+
+The local `~/OneDrive/EmailArchive 1/` directory is kept in sync with OneDrive by the `abraunegg/onedrive` v2.5.10 client. Its bundled Microsoft `application_id` is broken for our account (interactive flow → `/common/wrongplace`, device flow → "code expired"), so we use a custom Entra app registration.
+
+### Custom Entra app
+- Portal: https://entra.microsoft.com → Identity → Applications → App registrations → `openclaw-onedrive`
+- **Client (Application) ID**: `f4c55830-766f-403b-ab59-90b0241bfc24` (already pinned in `~/.config/onedrive/config` as `application_id = "..."`)
+- **Supported account types**: Any Entra ID tenant + Personal Microsoft accounts
+- **Allow public client flows**: **Yes** (Authentication → Advanced settings) — critical
+- **Redirect URIs** (Mobile and desktop applications):
+  - `https://login.microsoftonline.com/common/oauth2/nativeclient`
+  - `http://localhost`
+  - `https://login.live.com/oauth20_desktop.srf`
+- **Microsoft Graph delegated permissions**: `Files.ReadWrite`, `Files.ReadWrite.All`, `Sites.ReadWrite.All`, `offline_access`, `User.Read` (all five required — `Files.ReadWrite.All` alone causes HTTP 400 invalidRequest on file uploads even though directory creation works, which is misleading)
+
+### Reauth procedure
+When the service starts crash-looping with `AADSTS70000: The user could not be authenticated`:
+
+```bash
+systemctl --user stop onedrive
+onedrive --reauth     # interactive: opens browser, sign in as the OneDrive owner, paste back redirected URL
+onedrive --sync --resync --verbose 2>&1 | tee /tmp/onedrive-resync.log
+systemctl --user start onedrive
+systemctl --user status onedrive --no-pager
+```
+
+`--resync` is required because the local state DB is invalidated whenever `application_id` changes (or after a long auth gap). It needs `--sync` (or `--monitor`) alongside it in v2.5.10.
+
+### Gotchas
+- abraunegg `--dry-run` is **not actually dry**: it creates remote directories for real and may issue real PUTs that get reported as 400s. Treat dry-run skeptically — if directories were created and only file uploads failed, the cause is usually missing scopes, not local state.
+- Resync warning lists possible deletes/overwrites/conflicts, but in practice if the dry-run plan shows zero of those, the real run is safe.
+- Watch out for false-positive "errors" in log greps: `£400.00` invoice amounts match `400` and look like HTTP 400s.
+
 ## Usage
 Manual sync:
 
