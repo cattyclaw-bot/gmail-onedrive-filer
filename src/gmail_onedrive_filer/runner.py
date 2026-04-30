@@ -11,7 +11,7 @@ from .state import AppState
 
 DEFAULT_TRIAGE_QUERY = (
     "newer_than:2d -label:stluke-filed -label:stluke-tofile "
-    "((subject:(invoice OR invoices OR invoicing OR expense OR expenses OR bill OR transfer OR order OR orders OR subscription OR \"tax invoice\" OR \"invoice available\" OR \"payment receipt\" OR \"sales receipt\" OR remittance OR payout OR renewed OR renewal OR renew) "
+    "((subject:(invoice OR invoices OR invoicing OR expense OR expenses OR bill OR transfer OR order OR orders OR subscription OR \"tax invoice\" OR \"invoice available\" OR \"payment notification\" OR \"payment receipt\" OR \"sales receipt\" OR remittance OR payout OR renewed OR renewal OR renew) "
     "-subject:(\"single-use code\" OR verify OR security OR \"shared the folder\" OR newsletter)) "
     "OR from:(stripe.com) "
     "OR from:(gocardless) "
