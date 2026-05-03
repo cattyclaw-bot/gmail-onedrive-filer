@@ -15,7 +15,8 @@ DEFAULT_TRIAGE_QUERY = (
     "-subject:(\"single-use code\" OR verify OR security OR \"shared the folder\" OR newsletter)) "
     "OR from:(stripe.com) "
     "OR from:(gocardless) "
-    "OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment))"
+    "OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment) "
+    "OR (body:(invoice OR invoices OR \"tax invoice\" OR remittance OR \"payment receipt\") has:attachment -subject:(\"single-use code\" OR verify OR security OR \"shared the folder\" OR newsletter)))"
 )
 
 
