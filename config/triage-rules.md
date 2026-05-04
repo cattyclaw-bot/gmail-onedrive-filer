@@ -5,7 +5,7 @@ This file is the backup copy of triage rules used by `gmail-onedrive-filer triag
 ## Default Gmail Query
 
 ```text
-newer_than:2d -label:stluke-filed -label:stluke-tofile ((subject:(invoice OR invoices OR invoicing OR expense OR expenses OR bill OR transfer OR order OR orders OR subscription OR statement OR statements OR "tax invoice" OR "invoice available" OR "payment receipt" OR "sales receipt" OR remittance OR payout OR renewed OR renewal OR renew) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)) OR from:(stripe.com) OR from:(gocardless) OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment) OR (body:(invoice OR invoices OR "tax invoice" OR remittance OR "payment receipt") has:attachment -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)))
+newer_than:2d -label:stluke-filed -label:stluke-tofile ((subject:(invoice OR invoices OR invoicing OR expense OR expenses OR bill OR transfer OR order OR orders OR subscription OR statement OR statements OR "tax invoice" OR "invoice available" OR "payment receipt" OR "sales receipt" OR remittance OR payout OR renewed OR renewal OR renew) -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)) OR from:(stripe.com) OR from:(gocardless) OR (from:(lynette.polderman@hotmail.co.uk OR chriswarrell54@gmail.com) has:attachment) OR ((invoice OR invoices OR "tax invoice" OR remittance OR "payment receipt") has:attachment -subject:("single-use code" OR verify OR security OR "shared the folder" OR newsletter)))
 ```
 
 ## Included Criteria
